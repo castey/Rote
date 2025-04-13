@@ -4,8 +4,25 @@ import networkx as nx # type: ignore
 
 class Rote:
     def __init__(self):
-        pass # maybe this will be used one day
+        # initiate nx multi edge graph
+        self.nx_graph = nx.MultiDiGraph()  # allows multiple edges and direction (good for KGs)
+    
+    # builds a KG directly from unstructured input
+    def build_nx_graph(self, unstruct_data_input):
         
+        # check if argument is path or string
+        if os.path.isfile(unstruct_data_input):
+            with open(unstruct_data_input, "r", encoding="utf-8") as f:
+                unstruct_data_string = f.read()
+        else:
+            unstruct_data_string = unstruct_data_input
+        
+        print("Building knowledge graph from unstructured data")
+        for triple in extract_triples(unstruct_data_string):
+            self.nx_graph.add_edge(triple["head"], triple["tail"], label=triple["relation"])   
+        print("KG construction complete!")
+        
+    # returns triples as a dictionary from string input
     def build_triples(self, unstruct_data_input):
         
         # check if argument is path or string
@@ -19,12 +36,12 @@ class Rote:
         self.triples = extract_triples(unstruct_data_string)
         print("Triples construction complete!")
             
+        # print triples from dictionary
     def print_triples(self):
         for triple in self.triples:
             print(triple)
             
-    def build_nx_graph(self):
-        self.nx_graph = nx.MultiDiGraph()  # allows multiple edges and direction (good for KGs)
+    def build_nx_graph_from_triples_dict(self):
 
         for triple in self.triples:
             head = triple["head"]

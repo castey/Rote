@@ -4,11 +4,10 @@ raw = "Alice knows Bob. Tom lives in Paris. Alice knows Tom Bob works at OpenAI.
 
 rote = Rote()
 
-rote.build_triples(raw)
-
+#rote.build_triples(raw)
 #rote.print_triples()
 
-rote.build_nx_graph()
+rote.build_nx_graph(raw)
 
 facts = rote.recall("Paris")
 facts = facts + "\n\n" + rote.recall("Alice")

@@ -11,7 +11,7 @@ base_messages = [{
         "Please output a knowledge graph of triples of all the text contained within the prompt. "
         "Please return a string where each triple is a JSON object with three entries: head, relation, tail. "
         "Do not explain your output at all, simply output triples."
-        'If nodes/relationships are multiworded, separate with _'
+        "If nodes or relationships are multiworded, always separate with a _"
     )
 }]
 
@@ -26,7 +26,7 @@ def chunk_text(text, chunk_size=1000, overlap=200):
     return chunks
 
 # Step 2: Send to Ollama and parse response
-def get_triples_from_chunk(chunk, options=None):
+def get_triples_from_chunk(chunk, options={"temperature": 0.2, "top_p": 0.2}):
     messages = base_messages + [{"role": "user", "content": chunk}]
     response = client.chat(model=model_name, messages=messages, options=options or {})
     try:
@@ -49,7 +49,7 @@ def deduplicate_triples(all_triples):
             unique_triples.append(triple)
     return unique_triples
 
-# Step 4: Full KG builder
+# Step 4 (bulk): extract triples
 def extract_triples(unstruct_data_string, chunk_size=1000, overlap=200, options=None):
     chunks = chunk_text(unstruct_data_string, chunk_size, overlap)
     all_triples = []
@@ -57,3 +57,15 @@ def extract_triples(unstruct_data_string, chunk_size=1000, overlap=200, options=
         triples = get_triples_from_chunk(chunk, options)
         all_triples.extend(triples)
     return deduplicate_triples(all_triples)
+
+# Step 4 (stream): extract triples in stream
+def stream_triples(unstruct_data_string, chunk_size=1000, overlap=200, options=None):
+    chunks = chunk_text(unstruct_data_string, chunk_size, overlap)
+    seen = set()
+    for chunk in chunks:
+        triples = get_triples_from_chunk(chunk, options)
+        for triple in triples:
+            key = (triple['head'], triple['relation'], triple['tail'])
+            if key not in seen:
+                seen.add(key)
+                yield triple  # Stream it
